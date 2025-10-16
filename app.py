@@ -20,8 +20,6 @@ st.set_page_config(page_title="BTC/ETH Alerts", layout="wide")
 st.title("BTC/ETH Indicator and Alerts")
 st.caption("CoinGecko Demo API. BTC weekly close vs 50W SMA, BTC new ATH, ETH ≥ $5k.")
 
-VS = "usd"
-
 CURRENCY_SYMBOLS = {"usd": "$", "eur": "€", "gbp": "£"}
 SYM = CURRENCY_SYMBOLS.get(VS.lower(), "$")
 
@@ -161,7 +159,6 @@ if alerts:
 
     # 2) Send email notification
     subject = f"[Crypto Alerts] {len(alerts)} new signal(s)"
-    SYM = "$"  # Currency symbol
 
     body = "\n".join([
         *alerts,
