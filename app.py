@@ -5,6 +5,8 @@ import requests
 import pandas as pd
 import streamlit as st
 import plotly.graph_objects as go
+import smtplib, ssl
+from email.message import EmailMessage
 
 # -------- config --------
 API_BASE = "https://api.coingecko.com/api/v3"
@@ -127,12 +129,66 @@ state["last_run_utc"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
 state["consecutive_below"] = consec
 save_state(state)
 
+def send_email(subject: str, body: str, to_addr: str | None = None):
+    FROM = os.environ.get("ALERTS_EMAIL_FROM")
+    TO   = to_addr or os.environ.get("ALERTS_EMAIL_TO", FROM)
+    USER = os.environ.get("ALERTS_EMAIL_USER", FROM)
+    PASS = os.environ.get("ALERTS_EMAIL_PASS")
+    HOST = os.environ.get("ALERTS_SMTP_SERVER", "smtp.gmail.com")
+    PORT = int(os.environ.get("ALERTS_SMTP_PORT", "587"))
+
+    if not (FROM and TO and USER and PASS):
+        raise RuntimeError("Email env vars not set")
+
+    msg = EmailMessage()
+    msg["From"] = FROM
+    msg["To"] = TO
+    msg["Subject"] = subject
+    msg.set_content(body)
+
+    ctx = ssl.create_default_context()
+    with smtplib.SMTP(HOST, PORT) as s:
+        s.starttls(context=ctx)
+        s.login(USER, PASS)
+        s.send_message(msg)
+
 st.subheader("Signals")
+
 if alerts:
+    # 1) Show alerts on the page
     for a in alerts:
         st.success(a)
+
+    # 2) Send email notification
+    subject = f"[Crypto Alerts] {len(alerts)} new signal(s)"
+    SYM = "$"  # Currency symbol
+
+    body = "\n".join([
+        *alerts,
+        "",
+        f"BTC spot: {SYM}{spot.loc['bitcoin','current_price']:,.0f}",
+        f"BTC last weekly close: {SYM}{wk['close'].iloc[-1]:,.0f}",
+        f"BTC 50W SMA: {SYM}{wk['sma50'].iloc[-1]:,.0f}" if pd.notna(wk['sma50'].iloc[-1]) else "BTC 50W SMA: n/a",
+        f"ETH spot: {SYM}{spot.loc['ethereum','current_price']:,.0f}",
+        f"Time: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} UTC",
+    ])
+
+    try:
+        send_email(subject, body)
+        st.info("Email sent successfully.")
+    except Exception as e:
+        st.warning(f"Email failed: {e}")
+
 else:
     st.info("No new alerts right now.")
+
+with st.expander("Email test"):
+    if st.button("Send me a test email"):
+        try:
+            send_email("Test from BTC/ETH Alerts", "This is a test message.")
+            st.success("Test email sent.")
+        except Exception as e:
+            st.error(f"Test failed: {e}")
 
 with st.expander("Details"):
     st.write("Spot / ATH")
