@@ -24,6 +24,9 @@ with st.expander("Settings"):
         HEADERS["x-cg-demo-api-key"] = DEMO_API_KEY
     VS = st.selectbox("Quote currency", ["usd","eur","gbp"], index=0)
 
+CURRENCY_SYMBOLS = {"usd": "$", "eur": "€", "gbp": "£"}
+SYM = CURRENCY_SYMBOLS.get(VS.lower(), "$")
+
 @st.cache_data(ttl=60)
 def cg(url, params=None):
     params = params or {}
@@ -89,8 +92,8 @@ except Exception as e:
 
 # header metrics
 c1, c2 = st.columns(2)
-c1.metric(f"BTC Price ({VS.upper()})", f"${spot.loc['bitcoin','current_price']:,.0f}")
-c2.metric(f"ETH Price ({VS.upper()})", f"${spot.loc['ethereum','current_price']:,.0f}")
+c1.metric(f"BTC Price ({VS.upper()})", f"{SYM}{spot.loc['bitcoin','current_price']:,.0f}")
+c2.metric(f"ETH Price ({VS.upper()})", f"{SYM}{spot.loc['ethereum','current_price']:,.0f}")
 st.caption(f"Last updated: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} UTC")
 
 # chart
