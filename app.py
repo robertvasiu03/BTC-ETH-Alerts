@@ -18,11 +18,7 @@ st.set_page_config(page_title="BTC/ETH Alerts", layout="wide")
 st.title("BTC/ETH Indicator and Alerts")
 st.caption("CoinGecko Demo API. BTC weekly close vs 50W SMA, BTC new ATH, ETH ≥ $5k.")
 
-with st.expander("Settings"):
-    DEMO_API_KEY = st.text_input("CoinGecko Demo API key", value=DEMO_API_KEY, type="password")
-    if DEMO_API_KEY:
-        HEADERS["x-cg-demo-api-key"] = DEMO_API_KEY
-    VS = st.selectbox("Quote currency", ["usd","eur","gbp"], index=0)
+VS = "usd"
 
 CURRENCY_SYMBOLS = {"usd": "$", "eur": "€", "gbp": "£"}
 SYM = CURRENCY_SYMBOLS.get(VS.lower(), "$")
